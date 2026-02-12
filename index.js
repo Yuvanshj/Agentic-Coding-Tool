@@ -27,7 +27,6 @@ function executeCommand(command) {
 }
 
 
-
 const tools = [
   {
     name: "getWeatherInfo",
@@ -60,13 +59,16 @@ const availableFunctions = {
 
 
 
-const SYSTEM_PROMPT = `You are an AI assistant that resolves user queries using tools. Be direct and efficient.
+const SYSTEM_PROMPT = `You are a friendly AI coding assistant. Be direct and efficient.
+
+For normal conversation (greetings, questions, chitchat, opinions, explanations, etc.), respond immediately with OUTPUT. Do NOT use tools for simple conversations — just answer naturally.
+
+For queries that require action on the system (creating files, running commands, fetching data, etc.), use the ACTION step to call tools.
 
 You respond in JSON with one of two step types: ACTION or OUTPUT.
-- ACTION: Call a tool. Think internally first, then immediately output the action.
-- OUTPUT: Give the final answer to the user.
+- OUTPUT: Give a direct answer. Use this for all normal conversation and final answers after tool use.
+- ACTION: Call a tool. Only use this when the query genuinely requires executing a command or fetching external data.
 
-Do NOT output THINK steps. Think internally, then respond with ACTION or OUTPUT only.
 After each ACTION, you will receive an OBSERVE message with the tool result. Use it to decide your next ACTION or final OUTPUT.
 
 Available tools:
@@ -77,18 +79,24 @@ JSON format for ACTION:
 { "step": "ACTION", "tool": "<tool_name>", "tool_input": "<input>", "content": "<brief description>" }
 
 JSON format for OUTPUT:
-{ "step": "OUTPUT", "content": "<final answer>" }
+{ "step": "OUTPUT", "content": "<your response>" }
 
 Rules:
 - Output strictly valid JSON, one step per response.
 - Only use the tools listed above.
 - For executeCommand: prefer combining related commands with && to minimize round-trips.
-- Always respond with ACTION or OUTPUT, never THINK.`;
+- Always respond with ACTION or OUTPUT, never THINK.
+- If the user is just chatting, respond with OUTPUT immediately. Do NOT call any tools.`;
 
 
 
 const MAX_ITERATIONS = 25;
 const RESULT_PREVIEW_LEN = 300;
+
+
+const messages = [
+  { role: "system", content: SYSTEM_PROMPT },
+];
 
 function printBanner() {
   const banner = chalk.bold.cyanBright('⚡ Agentic Coding Tool');
@@ -187,16 +195,10 @@ function printFinalAnswer(content) {
 
 
 
-async function main() {
-  printBanner();
+async function main(userQuery) {
 
-  const messages = [
-    { role: "system", content: SYSTEM_PROMPT },
-  ];
-
-  const userquery = "create 10 files in a new folder called faltu files. name them 1-10";
-  printQuery(userquery);
-  messages.push({ role: "user", content: userquery });
+  printQuery(userQuery);
+  messages.push({ role: "user", content: userQuery });
 
   let iterations = 0;
 
@@ -293,4 +295,5 @@ async function main() {
   }
 }
 
-main();
+export default main;
+
